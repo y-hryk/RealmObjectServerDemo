@@ -46,25 +46,6 @@ class ViewController: UITableViewController {
     }
 
     // MARK: Private
-    func add() {
-        
-        let alertController = UIAlertController(title: "New Task", message: "Enter Task Name", preferredStyle: .alert)
-        var alertTextField: UITextField!
-        alertController.addTextField { textField in
-            alertTextField = textField
-            textField.placeholder = "Task Name"
-        }
-        alertController.addAction(UIAlertAction(title: "Add", style: .default) { [weak self] _ in
-            guard let text = alertTextField.text , !text.isEmpty else { return }
-            guard let weakself = self else {
-                return
-            }
-            
-            weakself.items.append(Task(value: ["text": text]))
-            weakself.tableView.reloadData()
-        })
-        self.present(alertController, animated: true, completion: nil)
-    }
     
     func setupRealm() {
         // Log in existing user with username and password
@@ -85,7 +66,41 @@ class ViewController: UITableViewController {
             )
             
             self.realm = try! Realm(configuration: configuration)
+            
+            self.updateItems()
+            
+            // Notify us when Realm changes
+            self.notificationToken = self.realm.addNotificationBlock { _ in
+                self.updateItems()
+            }
         }
+    }
+    
+    func add() {
+        
+        let alertController = UIAlertController(title: "New Task", message: "Enter Task Name", preferredStyle: .alert)
+        var alertTextField: UITextField!
+        alertController.addTextField { textField in
+            alertTextField = textField
+            textField.placeholder = "Task Name"
+        }
+        alertController.addAction(UIAlertAction(title: "Add", style: .default) { [weak self] _ in
+            guard let text = alertTextField.text , !text.isEmpty else { return }
+            guard let weakself = self else {
+                return
+            }
+            
+            weakself.items.append(Task(value: ["text": text]))
+            weakself.tableView.reloadData()
+        })
+        self.present(alertController, animated: true, completion: nil)
+    }
+    
+    func updateItems() {
+        if self.items.realm == nil, let list = self.realm.objects(TaskList.self).first {
+            self.items = list.items
+        }
+        self.tableView.reloadData()
     }
     
     // MARK: TableView Delegate & DataSource

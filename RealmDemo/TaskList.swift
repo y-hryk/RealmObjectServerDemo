@@ -13,7 +13,8 @@ class TaskList: Object {
     
     dynamic var text = ""
     dynamic var id = ""
-    
+    let items = List<Task>()
+
     override static func primaryKey() -> String? {
         return "id"
     }
