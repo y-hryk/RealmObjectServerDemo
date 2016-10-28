@@ -34,12 +34,13 @@ class ViewController: UITableViewController {
         self.tableView.register(UITableViewCell.self, forCellReuseIdentifier: "cell")
         
         // list
-        self.items.append(Task(value: ["text": "My First Text"]))
+//        self.items.append(Task(value: ["text": "My First Text"]))
         
         
         self.navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add,
                                                                  target: self,
                                                                  action: #selector(add))
+        self.navigationItem.leftBarButtonItem = editButtonItem
         // setRealm
         self.setupRealm()
         
@@ -49,10 +50,9 @@ class ViewController: UITableViewController {
     
     func setupRealm() {
         // Log in existing user with username and password
-        let username = "test@test.com"
-        let password = "testtest"
         
-        SyncUser.authenticate(with: Credential.usernamePassword(username: username, password: password,
+        SyncUser.authenticate(with: Credential.usernamePassword(username: Constants.username,
+                                                                password: Constants.password,
                                                                 actions: []),
                               server: Constants.syncAuthURL!)
         { (user, error) in
@@ -65,7 +65,18 @@ class ViewController: UITableViewController {
                 syncConfiguration: (user, Constants.syncServerURL!)
             )
             
+            
             self.realm = try! Realm(configuration: configuration)
+            
+            if self.realm.isEmpty {
+                try! self.realm.write {
+                    let list = TaskList()
+                    list.id = "1"
+                    list.text = "TODO"
+                    self.realm.add(list)
+                }
+            }
+
             
             self.updateItems()
             
@@ -90,8 +101,13 @@ class ViewController: UITableViewController {
                 return
             }
             
-            weakself.items.append(Task(value: ["text": text]))
-            weakself.tableView.reloadData()
+//            weakself.items.append(Task(value: ["text": text]))
+//            weakself.tableView.reloadData()
+            
+            let items = weakself.items
+            try! items.realm?.write {
+                items.insert(Task(value: ["text": text]), at: items.filter("completed = false").count)
+            }
         })
         self.present(alertController, animated: true, completion: nil)
     }
@@ -106,7 +122,7 @@ class ViewController: UITableViewController {
     // MARK: TableView Delegate & DataSource
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         
-        return  items.count
+        return self.items.count
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
@@ -118,6 +134,21 @@ class ViewController: UITableViewController {
         cell.textLabel?.alpha = item.completed ? 0.5 : 1
         
         return cell
+    }
+    
+    override func tableView(_ tableView: UITableView, moveRowAt sourceIndexPath: IndexPath, to destinationIndexPath: IndexPath) {
+        try! self.items.realm?.write {
+            self.items.move(from: sourceIndexPath.row, to: destinationIndexPath.row)
+        }
+    }
+    
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete {
+            try! self.realm.write {
+                let item = items[indexPath.row]
+                self.realm.delete(item)
+            }
+        }
     }
 }
 
