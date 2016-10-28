@@ -106,13 +106,18 @@ class ViewController: UITableViewController {
             
             let items = weakself.items
             try! items.realm?.write {
-                items.insert(Task(value: ["text": text]), at: items.filter("completed = false").count)
+                let task = Task()
+                task.text = text
+                task.completed = false
+//                items.insert(Task(value: ["text": text]), at: items.filter("completed = false").count)
+                items.insert(task, at: items.filter("completed = false").count)
             }
         })
         self.present(alertController, animated: true, completion: nil)
     }
     
     func updateItems() {
+        // 初回のみ実行する
         if self.items.realm == nil, let list = self.realm.objects(TaskList.self).first {
             self.items = list.items
         }
@@ -121,7 +126,6 @@ class ViewController: UITableViewController {
     
     // MARK: TableView Delegate & DataSource
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        
         return self.items.count
     }
     

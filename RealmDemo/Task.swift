@@ -12,6 +12,9 @@ import RealmSwift
 class Task: Object {
     
     dynamic var text = ""
+    dynamic var test = ""
+    dynamic var test2 = ""
+    dynamic var test3 = ""
     dynamic var completed = false
     
 }

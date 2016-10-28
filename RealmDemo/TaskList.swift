@@ -12,6 +12,7 @@ import RealmSwift
 class TaskList: Object {
     
     dynamic var text = ""
+    dynamic var desc = ""
     dynamic var id = ""
     let items = List<Task>()
 
